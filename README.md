@@ -166,6 +166,6 @@ MIT or custom license depending on your organization needs.
 
 ## ✍️ Credits
 
-Template created and maintained by [Franblakia](https://github.com/fullfran) for [BlakIA](blakia.es).
+Template created and maintained by [Franblakia](https://github.com/fullfran) for [BlakIA](https://www.blakia.es).
 
 Powered by [n8n](https://n8n.io), PostgreSQL, Redis and Docker Compose.
