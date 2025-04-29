@@ -75,7 +75,7 @@ services:
       - N8N_HOST=${N8N_DOMAIN:-localhost}
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
-      - N8N_EDITOR_BASE_URL=https:/${N8N_DOMAIN:-localhost}
+      - N8N_EDITOR_BASE_URL=https://${N8N_DOMAIN:-localhost}
       - N8N_PUBLIC_API_BASE_URL=https://${N8N_DOMAIN:-localhost}
     volumes: *ref_0
     depends_on: *ref_1
@@ -83,16 +83,16 @@ services:
     ports:
       - ${N8N_EXPOSED_PORT:-5678}:5678
     labels:
-      - traefik.http.routers.n8n-dev-smqcfd-1-web.rule=Host(`bah.blakia.es`)
-      - traefik.http.routers.n8n-dev-smqcfd-1-web.entrypoints=web
-      - traefik.http.services.n8n-dev-smqcfd-1-web.loadbalancer.server.port=5678
-      - traefik.http.routers.n8n-dev-smqcfd-1-web.service=n8n-dev-smqcfd-1-web
-      - traefik.http.routers.n8n-dev-smqcfd-1-web.middlewares=redirect-to-https@file
-      - traefik.http.routers.n8n-dev-smqcfd-1-websecure.rule=Host(`bah.blakia.es`)
-      - traefik.http.routers.n8n-dev-smqcfd-1-websecure.entrypoints=websecure
-      - traefik.http.services.n8n-dev-smqcfd-1-websecure.loadbalancer.server.port=5678
-      - traefik.http.routers.n8n-dev-smqcfd-1-websecure.service=n8n-dev-smqcfd-1-websecure
-      - traefik.http.routers.n8n-dev-smqcfd-1-websecure.tls.certresolver=letsencrypt
+      - traefik.http.routers.n8n-dev.rule=Host(`${N8N_DOMAIN}`)
+      - traefik.http.routers.n8n-dev.entrypoints=web
+      - traefik.http.services.n8n-dev.loadbalancer.server.port=5678
+      - traefik.http.routers.n8n-dev.service=n8n-dev
+      - traefik.http.routers.n8n-dev.middlewares=redirect-to-https@file
+      - traefik.http.routers.n8n-devsecure.rule=Host(`${N8N_DOMAIN}`)
+      - traefik.http.routers.n8n-devsecure.entrypoints=websecure
+      - traefik.http.services.n8n-devsecure.loadbalancer.server.port=5678
+      - traefik.http.routers.n8n-devsecure.service=n8n-devsecure
+      - traefik.http.routers.n8n-devsecure.tls.certresolver=letsencrypt
       - traefik.enable=true
   n8n-worker:
     restart: always
