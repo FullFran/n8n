@@ -1,17 +1,16 @@
 version: '3.8'
-
 volumes:
-  db_storage:
-  n8n_storage:
-  redis_storage:
-
+  db_storage: null
+  n8n_storage: null
+  redis_storage: null
 networks:
-  n8n_net:
-
-x-shared: &shared
+  n8n_net: null
+  dokploy-network:
+    external: true
+x-shared:
   restart: always
-  image: docker.n8n.io/n8nio/n8n:latest
-  environment:
+  image: docker.n8n.io/n8nio/n8n:next
+  environment: &ref_3
     - DB_TYPE=postgresdb
     - DB_POSTGRESDB_HOST=postgres
     - DB_POSTGRESDB_PORT=5432
@@ -24,16 +23,16 @@ x-shared: &shared
     - N8N_ENCRYPTION_KEY=${ENCRYPTION_KEY}
     - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
     - N8N_PORT=5678
-  volumes:
+  volumes: &ref_0
     - n8n_storage:/home/node/.n8n
-  depends_on:
+  depends_on: &ref_1
     redis:
       condition: service_healthy
     postgres:
       condition: service_healthy
-  networks:
+  networks: &ref_2
     - n8n_net
-
+    - dokploy-network
 services:
   postgres:
     image: postgres:16
@@ -45,44 +44,62 @@ services:
     volumes:
       - db_storage:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      test:
+        - CMD-SHELL
+        - pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}
       interval: 5s
       timeout: 5s
       retries: 10
     networks:
       - n8n_net
-
   redis:
     image: redis:6-alpine
     restart: always
     volumes:
       - redis_storage:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test:
+        - CMD
+        - redis-cli
+        - ping
       interval: 5s
       timeout: 5s
       retries: 10
     networks:
       - n8n_net
-
   n8n:
-    <<: *shared
-    ports:
-      - ${N8N_EXPOSED_PORT:-5678}:5678
+    restart: always
+    image: docker.n8n.io/n8nio/n8n:next
+    pull_policy: always
     environment:
       - N8N_HOST=${N8N_DOMAIN:-localhost}
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
       - N8N_EDITOR_BASE_URL=https:/${N8N_DOMAIN:-localhost}
       - N8N_PUBLIC_API_BASE_URL=https://${N8N_DOMAIN:-localhost}
-
+    volumes: *ref_0
+    depends_on: *ref_1
+    networks: *ref_2
+    ports:
+      - ${N8N_EXPOSED_PORT:-5678}:5678
+    labels:
+      - traefik.http.routers.n8n-dev-smqcfd-1-web.rule=Host(`bah.blakia.es`)
+      - traefik.http.routers.n8n-dev-smqcfd-1-web.entrypoints=web
+      - traefik.http.services.n8n-dev-smqcfd-1-web.loadbalancer.server.port=5678
+      - traefik.http.routers.n8n-dev-smqcfd-1-web.service=n8n-dev-smqcfd-1-web
+      - traefik.http.routers.n8n-dev-smqcfd-1-web.middlewares=redirect-to-https@file
+      - traefik.http.routers.n8n-dev-smqcfd-1-websecure.rule=Host(`bah.blakia.es`)
+      - traefik.http.routers.n8n-dev-smqcfd-1-websecure.entrypoints=websecure
+      - traefik.http.services.n8n-dev-smqcfd-1-websecure.loadbalancer.server.port=5678
+      - traefik.http.routers.n8n-dev-smqcfd-1-websecure.service=n8n-dev-smqcfd-1-websecure
+      - traefik.http.routers.n8n-dev-smqcfd-1-websecure.tls.certresolver=letsencrypt
+      - traefik.enable=true
   n8n-worker:
-    <<: *shared
+    restart: always
+    image: docker.n8n.io/n8nio/n8n:next
+    pull_policy: always
+    environment: *ref_3
+    volumes: *ref_0
+    depends_on: *ref_1
+    networks: *ref_2
     command: worker
-
-  # se pueden añadir todos los workers que quieras
-  # n8n-worker2:
-  #   <<: *shared
-  #   command: worker
-
-
